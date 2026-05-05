@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Shadow System</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@300;500&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background: radial-gradient(circle, #140000, #000000);
+      color: #ff2e2e;
+      text-align: center;
+    }
+
+    h1 {
+      text-shadow: 0 0 15px red;
+    }
+
+    .box {
+      margin: 20px;
+      padding: 20px;
+      background: rgba(255, 0, 0, 0.08);
+      border: 1px solid rgba(255, 0, 0, 0.4);
+      border-radius: 15px;
+    }
+
+    button {
+      padding: 12px;
+      margin: 10px;
+      border-radius: 8px;
+      border: none;
+      font-weight: bold;
+    }
+
+    .facil { background: #00eaff; color: black; }
+    .medio { background: yellow; color: black; }
+    .dificil { background: red; color: white; }
+    .extremo { background: black; color: red; }
+
+    .barra {
+      width: 80%;
+      height: 20px;
+      background: #111;
+      margin: auto;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progresso {
+      height: 100%;
+      background: linear-gradient(90deg, red, darkred);
+      width: 0%;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>⚔️ SHADOW SYSTEM</h1>
+
+<div class="box">
+  <h2>Nível: <span id="nivel">0</span></h2>
+  <h3>XP: <span id="xp">0</span>/100</h3>
+
+  <div class="barra">
+    <div class="progresso" id="barraXP"></div>
+  </div>
+</div>
+
+<div class="box">
+  <h3>🎯 Missões</h3>
+
+  <button class="facil" onclick="ganharXP(5)">Caminhar</button>
+  <button class="medio" onclick="ganharXP(10)">Estudar</button>
+  <button class="dificil" onclick="ganharXP(20)">Treino pesado</button>
+  <button class="extremo" onclick="ganharXP(40)">🔥 100 Flexões</button>
+</div>
+
+<div class="box">
+  <h3>🎤 Comando por voz</h3>
+  <button onclick="ouvir()">Falar</button>
+  <p id="resposta">Aguardando comando...</p>
+</div>
+
+<div class="box">
+  <button onclick="resetar()">🔄 Resetar Sistema</button>
+</div>
+
+<script>
+let xp = localStorage.getItem("xp") ? parseInt(localStorage.getItem("xp")) : 0;
+let nivel = localStorage.getItem("nivel") ? parseInt(localStorage.getItem("nivel")) : 0;
+
+function atualizarTela() {
+  document.getElementById("xp").innerText = xp;
+  document.getElementById("nivel").innerText = nivel;
+
+  let porcentagem = (xp / 100) * 100;
+  document.getElementById("barraXP").style.width = porcentagem + "%";
+}
+
+function ganharXP(valor) {
+  xp += valor;
+
+  if (xp >= 100) {
+    xp -= 100;
+    nivel++;
+    falar("Você evoluiu.");
+  }
+
+  salvar();
+  atualizarTela();
+}
+
+function salvar() {
+  localStorage.setItem("xp", xp);
+  localStorage.setItem("nivel", nivel);
+}
+
+function resetar() {
+  localStorage.clear();
+  xp = 0;
+  nivel = 0;
+  atualizarTela();
+}
+
+function falar(texto) {
+  let fala = new SpeechSynthesisUtterance(texto);
+  fala.lang = "pt-BR";
+  speechSynthesis.speak(fala);
+}
+
+function sistemaIA(comando) {
+  comando = comando.toLowerCase();
+
+  if (comando.includes("treino")) {
+    ganharXP(20);
+    return "Treino pesado registrado.";
+  }
+
+  if (comando.includes("flexão")) {
+    ganharXP(40);
+    return "Missão extrema concluída.";
+  }
+
+  if (comando.includes("estudar")) {
+    ganharXP(10);
+    return "Estudo registrado.";
+  }
+
+  if (comando.includes("nível")) {
+    return "Seu nível é " + nivel;
+  }
+
+  return "Comando não reconhecido.";
+}
+
+function ouvir() {
+  let reconhecimento = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  reconhecimento.lang = "pt-BR";
+
+  reconhecimento.start();
+
+  reconhecimento.onresult = function(event) {
+    let texto = event.results[0][0].transcript;
+
+    let resposta = sistemaIA(texto);
+
+    document.getElementById("resposta").innerText = resposta;
+
+    falar(resposta);
+  }
+}
+
+atualizarTela();
+</script>
+
+</body>
+</html>
