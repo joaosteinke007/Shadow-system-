@@ -1,0 +1,217 @@
+<!DOCTYPE html><html>
+<head>
+  <meta charset="UTF-8">
+  <title>Shadow System</title>  <!-- PWA -->  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#050014">
+  <link rel="icon" href="icon.png">  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@300;500&display=swap" rel="stylesheet">  <style>
+    body {
+      margin: 0;
+      font-family: 'Orbitron', sans-serif;
+      background: radial-gradient(circle, #050014, #000);
+      color: #00eaff;
+      text-align: center;
+    }
+
+    h1 {
+      text-shadow: 0 0 20px #00eaff;
+    }
+
+    .box {
+      margin: 15px;
+      padding: 15px;
+      border-radius: 15px;
+
+      /* EFEITO VIDRO / NEON */
+      background: rgba(0, 234, 255, 0.05);
+      border: 1px solid rgba(0, 234, 255, 0.3);
+      backdrop-filter: blur(10px);
+
+      box-shadow:
+        0 0 10px #00eaff,
+        inset 0 0 10px rgba(0,234,255,0.2);
+    }
+
+    button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      border: none;
+      font-weight: bold;
+      background: #00eaff;
+      color: black;
+    }
+
+    .barra {
+      width: 80%;
+      height: 20px;
+      background: #000;
+      margin: auto;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progresso {
+      height: 100%;
+      background: linear-gradient(90deg,#00eaff,#0077ff);
+      width: 0%;
+      transition: 0.4s;
+      box-shadow: 0 0 10px #00eaff;
+    }
+
+    li { border-bottom:1px solid #222; padding:5px; }
+  </style></head><body><h1>⚔️ SHADOW SYSTEM</h1><div class="box">
+  <h2>Nível: <span id="nivel">0</span></h2>
+  <h3>XP: <span id="xp">0</span>/<span id="xpMax">100</span></h3>
+  <div class="barra"><div class="progresso" id="barraXP"></div></div>
+</div><div class="box">
+  <h3>🧬 Atributos</h3>
+  Força: <span id="forca">1</span><br>
+  Resistência: <span id="resistencia">1</span>
+</div><div class="box">
+  <h3>🎯 Missões</h3>
+  <button onclick="treino()">Treino</button>
+  <button onclick="caminhadaFunc()">Caminhada</button>
+  <button onclick="gerarMissao()">🤖 IA</button>
+  <button onclick="ouvir()">🎤 Falar</button>  <p id="objetivo">Escolha uma missão</p>
+  <p id="missaoIA"></p>
+  <p id="resposta">Aguardando...</p>
+</div><div class="box">
+  <h3>📜 Histórico</h3>
+  <ul id="historico"></ul>
+</div><div class="box">
+  <button onclick="resetar()">Resetar</button>
+</div><script>
+let xp=0,nivel=0,forca=1,resistencia=1;
+let treinoBase=50,caminhadaBase=1;
+
+if(localStorage.getItem("save")){
+  let d=JSON.parse(localStorage.getItem("save"));
+  xp=d.xp;nivel=d.nivel;forca=d.forca;resistencia=d.resistencia;
+  treinoBase=d.treino;caminhadaBase=d.caminhada;
+}
+
+function xpNec(){ return 100+(nivel*20); }
+
+function atualizar(){
+  xpSpan.innerText=xp;
+  nivelSpan.innerText=nivel;
+  xpMax.innerText=xpNec();
+  barraXP.style.width=(xp/xpNec()*100)+"%";
+  forcaSpan.innerText=forca;
+  resistenciaSpan.innerText=resistencia;
+}
+
+function ganharXP(v){
+  xp+=v;
+  if(xp>=xpNec()){
+    xp-=xpNec();
+    nivel++;
+    forca++;
+    resistencia++;
+    falar("Level up");
+  }
+  salvar();
+  atualizar();
+}
+
+function treino(){
+  objetivo.innerText="💪 Faça "+treinoBase+" repetições";
+  log("Treino "+treinoBase);
+  ganharXP(20);
+  treinoBase+=10;
+}
+
+function caminhadaFunc(){
+  objetivo.innerText="🚶 Caminhe "+caminhadaBase+" km";
+  log("Caminhada "+caminhadaBase);
+  ganharXP(10);
+  caminhadaBase+=1;
+}
+
+/* IA */
+function gerarMissao(){
+  let tipos=["flexões","abdominais","corrida","caminhada"];
+  let tipo=tipos[Math.floor(Math.random()*tipos.length)];
+
+  let qtd=Math.floor(Math.random()*20)+(nivel*10)+20;
+
+  let texto = (tipo==="corrida"||tipo==="caminhada")
+    ? "🚶 "+(nivel+1)+" km de "+tipo
+    : "💪 "+qtd+" "+tipo;
+
+  missaoIA.innerText=texto;
+  log("IA: "+texto);
+}
+
+/* VOZ */
+function falar(t){
+  let f=new SpeechSynthesisUtterance(t);
+  f.lang="pt-BR";
+  speechSynthesis.speak(f);
+}
+
+function sistemaIA(c){
+  c=c.toLowerCase();
+
+  if(c.includes("treino")){ treino(); return "Treino iniciado"; }
+  if(c.includes("caminhada")){ caminhadaFunc(); return "Caminhada iniciada"; }
+  if(c.includes("missão")){ gerarMissao(); return "Gerando missão"; }
+  if(c.includes("nível")){ return "Seu nível é "+nivel; }
+
+  return "Não entendi";
+}
+
+function ouvir(){
+  if(!('webkitSpeechRecognition' in window)){
+    alert("Sem suporte a voz");
+    return;
+  }
+
+  let r=new webkitSpeechRecognition();
+  r.lang="pt-BR";
+  r.start();
+
+  resposta.innerText="🎤 Ouvindo...";
+
+  r.onresult=(e)=>{
+    let t=e.results[0][0].transcript;
+    let resp=sistemaIA(t);
+
+    resposta.innerText=resp;
+    falar(resp);
+  };
+}
+
+/* UTIL */
+function log(t){
+  let li=document.createElement("li");
+  li.innerText=t;
+  historico.prepend(li);
+}
+
+function salvar(){
+  localStorage.setItem("save",JSON.stringify({
+    xp,nivel,forca,resistencia,
+    treino:treinoBase,caminhada:caminhadaBase
+  }));
+}
+
+function resetar(){
+  localStorage.clear();
+  location.reload();
+}
+
+let xpSpan=xp=document.getElementById("xp");
+let nivelSpan=document.getElementById("nivel");
+let xpMax=document.getElementById("xpMax");
+let barraXP=document.getElementById("barraXP");
+let forcaSpan=document.getElementById("forca");
+let resistenciaSpan=document.getElementById("resistencia");
+let objetivo=document.getElementById("objetivo");
+let historico=document.getElementById("historico");
+let missaoIA=document.getElementById("missaoIA");
+let resposta=document.getElementById("resposta");
+
+atualizar();
+</script></body>
+</html>
